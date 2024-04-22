@@ -3,15 +3,13 @@ Assignment #3: Library DApp using Hardhat and ethers deployed to Moonbase
 Submitted by: Ciel Recuerdo [101439257]
 Submitted On: April 22, 2024 10:30
 
-##### Front-end #####
-### Project Setup
+### Front-end Project Setup
 1. cd frontend
 2. npm install
 3. REACT_APP_CONTRACT_ADDRESS=0xe0003E2e604A1Fce6D2Ebc5933De49419CA6f80F npm run start    
 http://localhost:3000
 
-##### Backend #####
-### Project Setup using the existing deployed contract. You can borrow a book and return the book using the same metamask account used in borrowing book.
+### Backend Project Setup using the existing deployed contract. You can borrow a book and return the book using the same metamask account used in borrowing book.
 1. At the root folder: npm install
 2. Add .env file in the root folder and add the following:  MOONBASE_URL, PRIVATE_KEY, REACT_APP_CONTRACT_ADDRESS
 
