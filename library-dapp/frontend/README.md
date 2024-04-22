@@ -1,20 +1,19 @@
-Assignment #3: Library DApp using Hardhat and ethers deployed to Moonbase Alpha
+Assignment #3: Library DApp using Hardhat and ethers deployed to Moonbase
 
 Submitted by: Ciel Recuerdo [101439257]
-Submitted On: April 21, 2024 10:00
+Submitted On: April 21, 2024 23:30
 
 ### TO DOs
 1. Fix REACT_APP_CONTRACT_ADDRESS
-2. Add Book <DONE> *Updated contract addBook
-3. Increase Qty/Copies <>
+2. Add Book <DONE>
+3. List borrowed books <DONE>
 4. List available books <DONE>
 5. Borrow book > Update List available books <DONE>
-6. Return book > Update List available books
-7. Update contract: (1)getAvailableBooks
-8. Add getBorrowedBooks
-9. Validations: (1)hasBook, (2)borrowBook, (3)returnBook, (4)addBook, (5)bookMustExist, (6)onlyOwner
-10. Enhance UI layout
-11. Code Cleaning
+6. Return book > Update List available books <DONE>
+7. Update contract: (1)getAllBooks <DONE>
+8. Validations <DONE>
+9. Enhance UI layout <>
+10. Code Cleaning <>
 
 ### Project Setup
 1. npm install
@@ -30,4 +29,5 @@ Submitted On: April 21, 2024 10:00
 1. Add Book
 2. Borrow Book
 3. Return Book
-4. Validations
+4. List of Available and Borrowed Books
+5. Form and Contract Validations

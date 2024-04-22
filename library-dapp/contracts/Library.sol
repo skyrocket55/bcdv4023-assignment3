@@ -23,6 +23,7 @@ contract Library is Ownable {
     }
 
     Book[] private books;
+    Book[] private allBooksAdded;
 
     struct AvailableBook {
         uint id;
@@ -42,7 +43,7 @@ contract Library is Ownable {
         _;
     }
 
-    function addBook(string calldata _title, uint _copies) public onlyOwner {
+    function addBook(string calldata _title, uint _copies) public onlyOwner returns(uint bookIndex) {
         require(_copies > 0, "Add at least one copy of the book.");
         for(uint i=0; i<books.length; i++) {
             if(keccak256(abi.encodePacked(books[i].title)) == keccak256(abi.encodePacked(_title))) {
@@ -50,7 +51,7 @@ contract Library is Ownable {
                 // If it does then increase the number of copies
                 books[i].copies = books[i].copies + _copies;
                 emit NewCopiesAdded(i, _copies);
-                return;
+                return i;
             }
         }
 
@@ -58,7 +59,14 @@ contract Library is Ownable {
         books.push();
         books[books.length - 1].title = _title;
         books[books.length -1].copies = _copies;
+        allBooksAdded.push(); // to track all the books added even after borrowing
         emit NewBookAdded(books.length-1, _title);
+    }
+
+    // to track all books including the borrowed book
+    function getAllBooks() public view returns (Book[] memory) {
+        Book[] memory allBooks = books;
+        return allBooks;
     }
 
     function getAvailableBooks() public view returns (AvailableBook[] memory) {
