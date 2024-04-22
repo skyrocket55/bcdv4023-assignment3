@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Table, Card, CardBody, CardFooter, Alert } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBook } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import Header from './Header';
 import { ethers } from 'ethers';
 import Library from '../artifacts/contracts/Library.sol/Library.json';
 
@@ -13,16 +13,13 @@ export default function Dashboard() {
     const [showAlert, setShowAlert] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
   
+    const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, Library.abi, provider);
+
     const fetchAvailableBooks = async() => {
         try {
-            const contractAddress = '0xe0003E2e604A1Fce6D2Ebc5933De49419CA6f80F';
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = new ethers.Contract(contractAddress, Library.abi, provider);
-            console.log('contractAddress: ', contractAddress);
-            console.log('contract: ', contract);
-            console.log('Fetching available books...');
             const availableBooksList = await contract.getAvailableBooks();
-            console.log('Available books list:', availableBooksList);
             
             if(availableBooksList.length>0) {
                 const availableBooks = availableBooksList.map(book => ({
@@ -30,7 +27,6 @@ export default function Dashboard() {
                     title: book.title
                 }));
                 setListOfAvailableBooks(availableBooks);
-                console.log('fetched AvailableBooks: ', availableBooks);
             }
         } catch (error) {
             console.error(error);
@@ -48,33 +44,24 @@ export default function Dashboard() {
 
     const handleBorrowBook = async(bookId) => {
         try {
-            const contractAddress = '0xe0003E2e604A1Fce6D2Ebc5933De49419CA6f80F';
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = new ethers.Contract(contractAddress, Library.abi, provider);
-            console.log('contractAddress: ', contractAddress);
-            console.log('contract: ', contract);
             setLoading(true);
-            console.log('handleBorrowBook: ', bookId);
             const contractSigner = contract.connect(provider.getSigner());
             const borrowedBook = await contractSigner.borrowBook(bookId);
-            console.log('borrowedBook: ', borrowedBook);
             
             // Refresh available books after getting the transaction hash
             if(borrowedBook.hash) {
                 await fetchAvailableBooks();
-                console.log('Available books after borrowing:', listOfAvailableBooks);
             }
             
-            // Update available books after a delay as fetching the updated list from the chain is taking max 20 seconds
+            // Update available books after a delay as fetching the updated list from the chain is taking max 35 seconds
             setTimeout(async () => {
-                console.log('Available books after borrowing:', listOfAvailableBooks);
                 // Refresh the list
                 const updatedBookList = listOfAvailableBooks.filter((book) => book.id !== bookId);
                 setListOfAvailableBooks(updatedBookList);
-                console.log('Available books after borrowing:', listOfAvailableBooks);
+                
                 setLoading(false);
                 setShowSuccessBorrowed(true);
-            }, 20000); // 20 seconds delay
+            }, 35000);
         } catch (error) {
             console.error(error);
             setLoading(false);
@@ -91,7 +78,9 @@ export default function Dashboard() {
                 <div className="col-md-8 mx-auto">
                     <div className="card border-info ">
                         <div className="card-body">
-                            <h5 className="card-title">Available Books</h5>
+                            <div className="card-title">
+                                 <Header title="Available Books" margin="ml-2" icon={faBookOpen} size="xs"/>
+                            </div>
                             {/* Nested Child Card */}
                             <Card>          
                                 <CardBody>

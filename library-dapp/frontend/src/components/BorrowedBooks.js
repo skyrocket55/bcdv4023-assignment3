@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Table, Card, CardBody, CardFooter, Alert } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBook } from '@fortawesome/free-solid-svg-icons';
+import { faBookBookmark } from '@fortawesome/free-solid-svg-icons';
+import Header from './Header';
 import { ethers } from 'ethers';
 import Library from '../artifacts/contracts/Library.sol/Library.json';
 
@@ -13,21 +13,19 @@ export default function BorrowedBooks() {
     const [showAlert, setShowAlert] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
   
+    const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, Library.abi, provider);
+    
     const fetchAllBooks = async() => {
         try {
-            const contractAddress = '0xe0003E2e604A1Fce6D2Ebc5933De49419CA6f80F';
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = new ethers.Contract(contractAddress, Library.abi, provider);
-            console.log('contractAddress: ', contractAddress);
-            console.log('contract: ', contract);
-
             const allBooksAddedList = await contract.getAllBooks();
             if(allBooksAddedList.length>0) {
                 const allBorrowedBooks = allBooksAddedList
-                .filter(book => book.borrowers.length>0)
                 .map((book, index) => {
                     const borrowedCopies = book.borrowers.length;
                     const availableCopies = book.copies.toNumber() - borrowedCopies;
+                    
                     return {
                         id: index,
                         title: book.title,
@@ -35,9 +33,10 @@ export default function BorrowedBooks() {
                         availableCopies: availableCopies,
                         borrowers: book.borrowers.map(hex => shortenAddress(hex))
                     };
-                });
+                })
+                .filter(book => book.borrowers.length>0); // filter books with borrowers to show borrowed books
+                
                 setListOfBorrowedBooks(allBorrowedBooks);
-                console.log('fetched allBorrowedBooks: ', allBorrowedBooks);
             }
         } catch (error) {
             console.error(error);
@@ -50,38 +49,30 @@ export default function BorrowedBooks() {
 
     const handleReturnBook = async(bookId) => {
         try {
-            const contractAddress = '0xe0003E2e604A1Fce6D2Ebc5933De49419CA6f80F';
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = new ethers.Contract(contractAddress, Library.abi, provider);
-            console.log('contractAddress: ', contractAddress);
-            console.log('contract: ', contract);
             setLoading(true);
-            console.log('handleReturnBook: ', bookId);
             const contractSigner = contract.connect(provider.getSigner());
             const returedBook = await contractSigner.returnBook(bookId);
-            console.log('returedBook: ', returedBook);
             
             // Refresh available books after borrowing
-            fetchAllBooks();
+            if(returedBook.hash) {
+                await fetchAllBooks();
+            }
 
-            // Update available books after a delay as fetching the updated list from the chain is taking max 20 seconds
+            // Update available books after a delay as fetching the updated list from the chain is taking max 35 seconds
             setTimeout(async () => {
-                console.log('Borrowed books:', listOfBorrowedBooks);
                 // Refresh the list
                 const updatedBookList = listOfBorrowedBooks.filter(async (book) => {
-                    if(book.borrowers.length==0) {
-                        return book.id !== bookId;
+                    if(book.borrowers.length==0) { 
+                        return book.id !== bookId; // remove in the list if no more borrowers
                     } else {
-                        // Remove the borrower and update available copies
-                        await fetchAllBooks();
+                        await fetchAllBooks(); // get the updated list
                     }
                 });
                 setListOfBorrowedBooks(updatedBookList);
-
-                console.log('Refresh Borrowed books:', listOfBorrowedBooks);
+                
                 setLoading(false);
                 setShowSuccessReturned(true);
-            }, 20000); // 20 seconds delay
+            }, 35000);
         } catch (error) {
             setLoading(false);
             console.error(error);            
@@ -95,7 +86,7 @@ export default function BorrowedBooks() {
     const shortenAddress = (arrAddress) => {
         // Check if arrAddress is an array
         if (!Array.isArray(arrAddress)) {
-            return `${arrAddress.slice(0, 15)}...${arrAddress.slice(-5)}`; // If it's not an array, return it as is
+            return `${arrAddress.slice(0, 15)}...${arrAddress.slice(-5)}`;
         }
 
         return arrAddress.map(hex => `${hex.slice(0, 15)}...${hex.slice(-5)}`);
@@ -107,15 +98,16 @@ export default function BorrowedBooks() {
                 <div className="col-md-8 mx-auto">
                     <div className="card border-info ">
                         <div className="card-body">
-                            <h5 className="card-title">Borrowed Books</h5>      
+                            <div className="card-title">
+                                <Header title="Borrowed Books" margin="ml-2" icon={faBookBookmark} size="xs"/>
+                            </div>      
                             {/* Nested Child Card */}
-                            <Card>          
+                            <Card>
                                 <CardBody>
                                     <div className='table-responsive'>
                                         <Table striped bordered hover>
                                             <thead>
                                                 <tr className='text-center'>
-                                                <th scope='col'>ID</th>
                                                 <th scope='col'>Title</th>
                                                 <th scope='col'>Available Copies</th>
                                                 <th scope='col'>Borrowers</th>
@@ -128,8 +120,7 @@ export default function BorrowedBooks() {
                                                     return (
                                                     <tr key={index} className='text-center'>
                                                         <>
-                                                            <td width='10%'>{book.id}</td>
-                                                            <td width='20%'>{book.title}</td>
+                                                            <td width='30%'>{book.title}</td>
                                                             <td width='10%'>{book.availableCopies}</td>
                                                             {book.borrowers.length > 1 ? (
                                                                 <td width='40%'>

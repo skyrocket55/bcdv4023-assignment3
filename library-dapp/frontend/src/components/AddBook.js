@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button, Form, Card, CardHeader, CardBody, Alert, CardFooter } from 'react-bootstrap';
 import { ethers } from 'ethers';
 import { faBook } from '@fortawesome/free-solid-svg-icons';
@@ -7,12 +7,16 @@ import Library from '../artifacts/contracts/Library.sol/Library.json';
 
 export default function AddBook() {
     // Use the state hook to manage component state
-    const [quantity, setQuantity] = useState(1);
-    const [book, setBook] = useState({title: '', quantity: ''});
-    const [actionSelected, setAction] = useState('');
+    const [book, setBook] = useState({title: '', quantity: 1});
     const [showAlert, setShowAlert] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showError, setShowError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
+    const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const contract = new ethers.Contract(contractAddress, Library.abi, provider);
 
     // handle adding of book in the contract
     const handleAddBook = async () => {
@@ -24,25 +28,26 @@ export default function AddBook() {
 
         setLoading(true); //loading spinner
         try {
-            const contractAddress = '0xe0003E2e604A1Fce6D2Ebc5933De49419CA6f80F';
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = new ethers.Contract(contractAddress, Library.abi, provider);
             const contractSigner = contract.connect(provider.getSigner());
             const bookAdded = await contractSigner.addBook(book.title, book.quantity);
             await bookAdded.wait();
 
-            console.log('bookAdded: ', bookAdded);
             if(bookAdded.hash) {
-                // Update available books after a delay as fetching Available Books list from the chain is taking 20 seconds
+                // Update available books after a delay as fetching Available Books list from the chain is taking max 35 seconds
                 setTimeout(async () => {
                     // reset the form fields
                     setBook({title: '', quantity: ''});
                     setShowSuccess(true);
                     setLoading(false);
-                }, 20000); // 20 seconds delay
+                }, 35000);
             }
         } catch (error) {
             console.error(error);
+            setLoading(false);
+            if (error.data && error.data.message) {
+                setErrorMessage(error.data.message);
+                setShowError(true);
+            }
         } finally {
             setLoading(false);
         }
@@ -57,7 +62,7 @@ export default function AddBook() {
             const newQuantity = Math.max(1, parseInt(event.target.value) || 1);
             value = newQuantity;
         }
-        console.log('handleChange: ', name, value);
+        
         setBook({
         ...book,
         [name]: value
@@ -65,12 +70,18 @@ export default function AddBook() {
     }
 
     const handleIncrement = () => {
-        setQuantity(quantity + 1);
+        setBook(prevState => ({
+            ...prevState,
+            quantity: prevState.quantity + 1
+        }));
       };
     
     const handleDecrement = () => {
-        if (quantity > 1) {
-            setQuantity(quantity - 1);
+        if (book.quantity > 1) {
+            setBook(prevState => ({
+                ...prevState,
+                quantity: prevState.quantity - 1
+            }));
         }
     };
 
@@ -84,7 +95,7 @@ export default function AddBook() {
                 <div className='col'>
                     <Form>
                         <Form.Group>
-                        <Form.Label>Description</Form.Label>
+                        <Form.Label>Title</Form.Label>
                         <Form.Control
                             type="text"
                             placeholder="Enter Book Title"
@@ -115,6 +126,9 @@ export default function AddBook() {
                     <Alert className='mt-2' variant="danger" show={showAlert} onClose={() => setShowAlert(false)} dismissible>
                         Please fill out all the required fields.
                     </Alert>
+                    <Alert className='mt-2' variant="danger" show={showError} onClose={() => setShowError(false)} dismissible>
+                        {errorMessage}
+                    </Alert>
                 </div>
               </CardBody>
               <CardFooter>
@@ -125,7 +139,7 @@ export default function AddBook() {
                     ) : 
                     ( 
                         <div className='d-flex justify-content-center'>
-                            <Button variant='outline-success' id='addButton' onClick={() => handleAddBook(book)}>
+                            <Button variant='outline-success' id='addButton' onClick={() => handleAddBook(book)} disabled={loading}>
                                 Submit
                             </Button>
                         </div>
