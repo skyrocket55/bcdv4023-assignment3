@@ -17,7 +17,7 @@ export default function AddBook() {
     const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const contract = new ethers.Contract(contractAddress, Library.abi, provider);
-
+    
     // handle adding of book in the contract
     const handleAddBook = async () => {
         // form validation
@@ -36,7 +36,7 @@ export default function AddBook() {
                 // Update available books after a delay as fetching Available Books list from the chain is taking max 35 seconds
                 setTimeout(async () => {
                     // reset the form fields
-                    setBook({title: '', quantity: ''});
+                    setBook({title: '', quantity: 1});
                     setShowSuccess(true);
                     setLoading(false);
                 }, 35000);
@@ -48,8 +48,6 @@ export default function AddBook() {
                 setErrorMessage(error.data.message);
                 setShowError(true);
             }
-        } finally {
-            setLoading(false);
         }
     };
     
